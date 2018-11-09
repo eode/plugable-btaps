@@ -39,7 +39,7 @@ Due to PyBluez limitations, this library will currently only work on Linux and W
 
 Dependencies
 ____________
- - `Python 2.7.x`_
+ - `Python 2.7.x or Python 3.3+`_
  - PyBluez_
 
 Installation
@@ -47,11 +47,16 @@ ____________
 First, install PyBluez using the appropriate link or command for your OS:
 
 **Windows**
-    Download and install `PyBluez for Python 2.7`_
+    Download and install `PyBluez for Python 2.7`_, or `PyBlues on Windows with Python 3.3+`_
 
 **Ubuntu/Debian**::
 
-    sudo apt-get install python-bluez
+For Python 2, there's a system package:
+    sudo apt install python-bluez
+
+For Python 3, install dependencies, and use pip:
+    sudo apt install libbluetooth-dev
+    sudo pip install pybluez
 
 **Fedora**::
 
@@ -77,6 +82,7 @@ When I try to pip install plugable-btaps I get a compilation error:
 
 .. _Plugable PS-BTAPS1 Bluetooth Home Automation Switch: http://plugable.com/products/ps-btaps1/
 .. _PyBluez: https://code.google.com/p/pybluez/
-.. _Python 2.7.x: https://www.python.org/
+.. _Python 2.7.x or Python 3.3+: https://www.python.org/
 .. _PyBluez for Python 2.7: https://code.google.com/p/pybluez/downloads/detail?name=PyBluez-0.20.win32-py2.7.exe
+.. _PyBluez on Windows for Python 3.3+: https://stackoverflow.com/questions/48821917/downloading-and-installing-pybluez-for-a-64-bit-windows-10-pc
 .. _GitHub Wiki: https://github.com/bernieplug/plugable-btaps/wiki/libbtaps-Documentation-and-Examples

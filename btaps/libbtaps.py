@@ -1,3 +1,5 @@
+from __future__ import absolute_import, division, unicode_literals, print_function, nested_scopes
+
 from array import array
 import sys
 import datetime
@@ -7,6 +9,20 @@ if sys.platform.startswith('darwin'):
     #import lightblue-shim as bluetooth
 else:
     import bluetooth
+
+try:
+    # Py2.7
+    # noinspection PyShadowingBuiltins, PyUnresolvedReferences,PyCompatibility
+    input = raw_input
+    # noinspection PyShadowingBuiltins, PyUnresolvedReferences,PyCompatibility
+    range = xrange
+    # noinspection PyShadowingBuiltins,PyUnresolvedReferences
+    str = unicode
+    from future_builtins import *
+
+except (ImportError, NameError):
+    # Py3.3+
+    pass
 
 
 # Converts badly formatted hex into decimal values.
@@ -36,7 +52,7 @@ class BTaps:
             data = self.socket.recv(length)
             return data
         except IOError as e:
-            print e
+            print(e)
             pass
 
     # Find and connect to btaddr provided when instantiating class
@@ -69,7 +85,7 @@ class BTaps:
     def set_datetime_now(self):
         now = datetime.datetime.now()
         # Set Date/Time Packet: 0xCCAA090901(year)(month)(day)(hour)(minute)(second)(weekday number)
-        payload = buffer(array('B', [0xcc, 0xaa, 0x09, 0x09, 0x01,
+        payload = bytes(bytearray([0xcc, 0xaa, 0x09, 0x09, 0x01,
                                      int(now.strftime('%y'), 16), int(now.strftime('%m'), 16),
                                      int(now.strftime('%d'), 16), int(now.strftime('%H'), 16),
                                      int(now.strftime('%M'), 16), int(now.strftime('%S'), 16),
@@ -83,7 +99,7 @@ class BTaps:
     # Get name given to the device
     def get_dev_name(self):
         # Request name packet: 0xCCAA03180119
-        payload = buffer(array('B', [0xCC, 0xAA, 0x03, 0x18, 0x01, 0x19]))
+        payload = bytes(bytearray([0xCC, 0xAA, 0x03, 0x18, 0x01, 0x19]))
         self.socket.send(payload)
         response = self.__recv_data()
 
@@ -95,8 +111,8 @@ class BTaps:
             return False
 
         # Changed name packet: 0xCCAA121701(New name, max 16 chars)
-        name_array = array('B', name)
-        packet = array('B', [0xCC, 0xAA, 0x12, 0x17, 0x01])
+        name_array = bytearray(name)
+        packet = bytearray([0xCC, 0xAA, 0x12, 0x17, 0x01])
         packet += name_array
 
         if len(packet) > 21:
@@ -105,7 +121,7 @@ class BTaps:
         while len(packet) < 21:
             packet.append(0)
 
-        payload = buffer(packet)
+        payload = bytes(packet)
         self.socket.send(payload)
         response = self.__recv_data()
         return response
@@ -115,15 +131,15 @@ class BTaps:
     def set_switch(self, on):
         if on:
             # ON Payload = 0xCCAA03010101
-            payload = buffer(array('B', [0xCC, 0xAA, 0x03, 0x01, 0x01, 0x01]))
+            payload = bytes(bytearray([0xCC, 0xAA, 0x03, 0x01, 0x01, 0x01]))
         else:
             # OFF Payload = 0xCCAA03010100
-            payload = buffer(array('B', [0xCC, 0xAA, 0x03, 0x01, 0x01, 0x00]))
+            payload = bytes(bytearray([0xCC, 0xAA, 0x03, 0x01, 0x01, 0x00]))
 
         self.socket.send(payload)
         response = self.__recv_data()
 
-        response_bytes = memoryview(response).tolist()
+        response_bytes = list(bytes(response))
 
         # Failed response packet: 0xCC55020101
         if response_bytes == [0xCC, 0x55, 0x02, 0x01, 0x01]:
@@ -136,7 +152,7 @@ class BTaps:
         return True
 
     def __set_timer(self, btapstimer, create=True):
-        name_array = array('B', btapstimer.name)
+        name_array = bytearray(btapstimer.name)
 
         start_time = btapstimer.get_start_time_bad_hex()
         end_time = btapstimer.get_end_time_bad_hex()
@@ -147,7 +163,7 @@ class BTaps:
         else:
             create_byte = 0x03
 
-        packet = array('B', [0xCC, 0xAA, 0x1A, create_byte, 0x01, btapstimer.timer_id, repeat_day,
+        packet = bytearray([0xCC, 0xAA, 0x1A, create_byte, 0x01, btapstimer.timer_id, repeat_day,
                              start_time[0], start_time[1], end_time[0], end_time[1], btapstimer.on])
         packet += name_array
 
@@ -157,7 +173,7 @@ class BTaps:
         while len(packet) < 29:
             packet.append(0)
 
-        payload = buffer(packet)
+        payload = bytes(packet)
         self.socket.send(payload)
         response = self.__recv_data()
         return response
@@ -177,23 +193,23 @@ class BTaps:
     #                                   timer_list is a list of BTApsTimer objects
     def get_switch_state(self):
         # Request device state packet: 0xCCAA03120113
-        payload = buffer(array('B', [0xCC, 0xAA, 0x03, 0x12, 0x01, 0x13]))
+        payload = bytes(bytearray([0xCC, 0xAA, 0x03, 0x12, 0x01, 0x13]))
         self.socket.send(payload)
 
         response = self.__recv_data()
-        on = memoryview(response).tolist()[7]
+        on = list(bytearray(response))[7]
         response_list = []
 
         while True:
             response = self.__recv_data(23)
-            if memoryview(response).tolist() == [0x00]:
+            if list(bytearray(response)) == [0x00]:
                 break
             else:
                 response_list.append(response)
 
         timer_list = []
         for timer_response in response_list:
-            timer_bytes = memoryview(timer_response).tolist()
+            timer_bytes = list(bytearray(timer_response))
             timer = BTapsTimer(timer_bytes[0], timer_response[7:])
             timer.set_repeat_days_byte(timer_bytes[1])
             timer.set_start_time(bad_hex_to_dec(timer_bytes[2]), bad_hex_to_dec(timer_bytes[3]))
@@ -213,7 +229,7 @@ class BTaps:
             timer_id = timer
 
         # Delete timer packet: 0xCCAA04190101(timer id)
-        payload = buffer(array('B', [0xCC, 0xAA, 0x04, 0x19, 0x01, 0x01, timer_id]))
+        payload = bytes(bytearray([0xCC, 0xAA, 0x04, 0x19, 0x01, 0x01, timer_id]))
         self.socket.send(payload)
 
         response = self.__recv_data()
